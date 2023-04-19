@@ -5,14 +5,14 @@ from requests_html import HTMLSession
 from youtube_transcript_api import YouTubeTranscriptApi
 import praw
 from praw.models import MoreComments
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
     
     
-cats = ["Womens Bags", "Mens belts", "womens belts", "womens eyeglasses", "mens eyeglasses", "Mens sunglasses", "womens sunglasses", "beanies", "wallets", "mens hats", "womens hats", "womens necklaces", "mens chains", "mens bracelets", "womens bracelets", "womens earrings", "mens earrings", "mens rings", "womens rings", "Air Fryer", "Humidifier", "Comforter"]
-# cats = ["womens belts"]
-
+# cats = ["Womens Bags", "Mens belts", "womens belts", "womens eyeglasses", "mens eyeglasses", "Mens sunglasses", "womens sunglasses", "beanies", "wallets", "mens hats", "womens hats", "womens necklaces", "mens chains", "mens bracelets", "womens bracelets", "womens earrings", "mens earrings", "mens rings", "womens rings", "Air Fryer", "Humidifier", "Comforter"]
+cats = ["Humidifier", "Comforter"]
 queries = ['best+' + cat.replace(' ', '+') for cat in cats]
 
-ann = []
 for query in queries:
     
     domain = "http://google.com/search?q="
@@ -63,19 +63,34 @@ for query in queries:
     for serp_link in serp_links:
 
         if 'youtube.com' in serp_link['link']:
-            # print('Youtube Link')
-            id = serp_link['link'].replace('https://www.youtube.com/watch?v=', '')
-            try:
-                transcript = YouTubeTranscriptApi.get_transcript(id)
-            except:
-                transcript = ''
-            text = ''
+            API_KEY = 'AIzaSyC3ElvfankD9Hf6ujrk3MUH1WIm_cu87XI'
+            VIDEO_ID = serp_link['link'].replace('https://www.youtube.com/watch?v=', '')
+            youtube = build('youtube', 'v3', developerKey=API_KEY)
 
-            if transcript:
-                for i in transcript:
-                    text = text + i['text'] + ' '
-                transcript = text.replace('\n', '')
-                final.append(transcript)
+            try:
+                response = youtube.videos().list(
+                    part='snippet',
+                    id=VIDEO_ID
+                ).execute()
+
+                description = response['items'][0]['snippet']['description']
+                desc = description.replace('\n', '')
+                print(desc)
+
+            except HttpError as e:
+                print('An error occurred: %s' % e)
+            # id = serp_link['link'].replace('https://www.youtube.com/watch?v=', '')
+            # try:
+            #     transcript = YouTubeTranscriptApi.get_transcript(id)
+            # except:
+            #     transcript = ''
+            # text = ''
+
+            # if transcript:
+            #     for i in transcript:
+            #         text = text + i['text'] + ' '
+            #     transcript = text.replace('\n', '')
+            #     final.append(transcript)
 
         elif 'reddit.com' in serp_link['link']:
             reddit_read_only = praw.Reddit(client_id="6ziqexypJDMGiHf8tYfERA",         # your client id
